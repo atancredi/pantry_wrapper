@@ -1,6 +1,6 @@
-import requests
-import json
-from typing import Union
+from requests import Response, request
+from json import loads, dumps
+from typing import Union, Optional
 
 '''
 pantry_wrapper - a Python wrapper for the Pantry API (https://getpantry.cloud)
@@ -24,13 +24,14 @@ def _format_body(res: str) -> Union[str, dict]:
 	
 	res = res.strip() # remove any extra whitespace or newline characters at beginning or end
 	try:
-		body = json.loads(res)
-	except: # if json.loads fails, it must not be JSON so return it as is
+		body = loads(res)
+	except TypeError: # if json.loads fails, it must not be JSON so return it as is 
 		body = res
 	return body
 
 
-def _pantry_call(pantry_id: str, request_type: str, name: str=None, contents: dict=None, return_type: str=DEFAULT_RETURN_TYPE) -> Union[str, dict]:
+def _pantry_call(pantry_id: str, request_type: str, name: str=None, contents: dict=None, return_type: str=DEFAULT_RETURN_TYPE)\
+ -> Optional[Union[str, dict] | Response]:
 	"""private base function for other API call functions"""
 	
 	url = f"https://getpantry.cloud/apiv1/pantry/{pantry_id}"
@@ -40,7 +41,7 @@ def _pantry_call(pantry_id: str, request_type: str, name: str=None, contents: di
 	
 	# if data is passed as 'contents', convert it to string to add to the request, else leave it empty
 	if contents != None:
-		payload = json.dumps(contents)
+		payload = dumps(contents)
 	else:
 		payload = ""
 	
@@ -49,7 +50,7 @@ def _pantry_call(pantry_id: str, request_type: str, name: str=None, contents: di
 	}
 	# request_type is passed by the individual wrapper functions;
 	# the Pantry API uses the same-ish URL endpoint but different HTTP methods for the different functions 
-	response = requests.request(request_type, url, headers=headers, data=payload)
+	response = request(request_type, url, headers=headers, data=payload)
 	
 	# two options to return: the whole Response object, or just the data from the body (string or JSON)
 	if return_type.strip().lower() == 'response':
